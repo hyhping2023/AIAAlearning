@@ -17,7 +17,7 @@ def SVMLoss(w, b, x, penalty, y, cuda='cpu'):
     model *= result[0, y]
     penaltyMatrix = torch.ones(result.shape)*penalty
     penaltyMatrix = penaltyMatrix.to(cuda)
-    substract = result - model + penaltyMatrix
+    substract = model - result + penaltyMatrix
     substract[substract < 0.] = 0.
     
     loss = (torch.sum(substract, dim=1) - penalty) / (substract.shape[1] - 1)
@@ -36,7 +36,7 @@ num_inputs = 784
 num_outputs = 10
 
 def train(device= 'cpu'):
-    lr = 0.01
+    lr = 1
     penalty = 0.1
     batch_size = 1024
     train_iter, test_iter = load_data_fashion_mnist(batch_size)
@@ -50,8 +50,8 @@ def train(device= 'cpu'):
             loss = SVMLoss(w, b, X.reshape(-1, num_inputs), penalty, y.reshape(-1, 1), device)
             loss.backward()
             with torch.no_grad():
-                w -= lr * w.grad
-                b -= lr * b.grad
+                w -= lr * w.grad / batch_size
+                b -= lr * b.grad / batch_size
                 w.grad.zero_()
                 b.grad.zero_()
             count += 1
@@ -61,6 +61,7 @@ def train(device= 'cpu'):
         print(loss)
         if loss < best_score:
             results = (w, b)
+            best_score = loss
     print(results)
     return results
 
