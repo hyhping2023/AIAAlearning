@@ -78,7 +78,7 @@ def test(w, b):
     print(f'Accuracy: {sum(results)/len(results)}')
 
 if __name__ == '__main__':
-    w,b = train('cuda')
+    w,b = train('cpu')
     test(w, b)
 
     # x = torch.tensor([[1., 1.],[2., 2.], [3., 3.]])

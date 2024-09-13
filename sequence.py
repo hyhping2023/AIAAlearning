@@ -27,6 +27,9 @@ def dataLoader(samNum, labels, backstep = 1,batch_size = 16, train = 0.6):
         y = torch.cat([Y_hat[current: train_num]], dim=1)
         current = train_num
         train_iter.append((X, y))
+    
+    # For test iter
+    allNum += samNum
     test_features = torch.zeros((allNum - numSam - backstep + 1, numSam + backstep))
     for i in range(numSam):
         test_features[:, i] = labels[i: i + allNum - numSam - backstep + 1]
@@ -65,18 +68,17 @@ def predict(test_iter, W1, W2, numSam, backstep):
 
 if __name__ == "__main__":
     allNum = 1000
-    X, labels = labelsGenerate(allNum, noise=0.)
+    X, labels = labelsGenerate(allNum, noise=0.2, function=lambda x: torch.cos(x))
     numSam = 4
     lr = 0.01
-    batch_size = 16
-    backstep = 4
+    batch_size = 2
+    backstep = 8
     train_iter, test_iter, train_num = dataLoader(numSam, labels, batch_size = batch_size
                                                   , backstep=backstep, train=0.6)
-    # print(train_iter[0][0].shape, len(train_iter), train_iter[-1][0].shape, len(test_iter))
-    # plt.show()
+
     W1, W2 = train(train_iter, lr, numSam, epochs = 20, device= 'cpu')
     
-
+    print(test_iter.shape)
     y_hat = predict(test_iter, W1, W2, numSam, backstep)
     y_train = torch.cat([_[1] for _ in train_iter], dim=0)
     y = labels.reshape(-1, 1)
@@ -85,13 +87,12 @@ if __name__ == "__main__":
     plt.rcParams['figure.figsize'] = (12, 6)
 
     argument = 1
-    y_hat = y_hat[train_num+numSam:, :]
     print(y_hat.shape, train_num)
-    y = y[:, train_num+numSam-argument:]
+    y = y[numSam + backstep - 1:, :]
     print(y.shape)
     # print(y_hat.shape, y_train.shape, X[y_train.shape[0] - argument+ numSam:].shape)
 
-    plt.plot(X[-y_hat.shape[0]:], y_hat.detach().numpy(), label='Predict', linestyle='--')
-    plt.plot(X[y_train.shape[0] - argument + numSam:], y.detach().numpy()[-y_hat.shape[0]:], label='True', linewidth=0.2)
+    plt.plot(X[numSam + backstep - 1:], y_hat.detach().numpy(), label='Predict', linestyle='--')
+    plt.plot(X[numSam + backstep - 1:], y.detach().numpy(), label='True', linewidth=0.2, color='r')
     plt.legend()
     plt.show()
