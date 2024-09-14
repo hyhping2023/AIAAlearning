@@ -42,6 +42,12 @@ def Net(W1, W2, X):
     y_hat = X1 @ W2
     return y_hat
 
+def grad_clipping(W, theta = 1):
+    norm = torch.sqrt(sum(torch.sum((w.grad) ** 2) for w in W))
+    if norm > theta:
+        for w in W:
+            w.grad *= theta / norm
+
 def train(train_iter, lr, samNum, epochs = 20, device= 'cpu'):
     W1 = torch.normal(0, 0.01, size=(samNum, 10), requires_grad=True)
     W2 = torch.normal(0, 0.01, size=(10, 1), requires_grad=True)
@@ -51,6 +57,7 @@ def train(train_iter, lr, samNum, epochs = 20, device= 'cpu'):
             Loss = (y_hat - y) ** 2 / 2
             Loss.sum().backward()
             with torch.no_grad():
+                grad_clipping([W1, W2], 1)
                 W1 -= lr * W1.grad
                 W2 -= lr * W2.grad
                 W1.grad.zero_()
@@ -68,7 +75,7 @@ def predict(test_iter, W1, W2, numSam, backstep):
 
 if __name__ == "__main__":
     allNum = 1000
-    X, labels = labelsGenerate(allNum, noise=0.2, function=lambda x: torch.cos(x))
+    X, labels = labelsGenerate(allNum, noise=0.2, function=lambda x: torch.exp(x)/(1 + torch.exp(x)) + torch.sin(x))
     numSam = 4
     lr = 0.01
     batch_size = 2
